@@ -12,6 +12,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Run unit tests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest==8.3.3 requests==2.32.3
+
+      - name: Run pytest (use your tests folder)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          echo $PYTHONPATH
+          pytest -q tests/unit
+
       # Optional, but good practice; also ensures docker/compose are ready
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -30,24 +49,10 @@ jobs:
       - name: Bring up stack
         run: docker compose up -d
 
-      # Run unit tests
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest==8.3.3
-
-      - name: Run pytest (use your tests folder)
+      - name: Run integration tests (host -> container)
         env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: |
-          echo $PYTHONPATH
-          pytest -q tests
+          BASE_URL: http://localhost:8080
+        run: pytest -q tests/integration
 
       # Always show logs created during the test run
       - name: Show application logs
