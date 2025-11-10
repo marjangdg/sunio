@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  ci:
+  build-deploy-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,14 +30,20 @@ jobs:
       - name: Bring up stack
         run: docker compose up -d
 
-      # Run unit tests *inside* the web container so logs go to /logs volume
-      - name: Run unit tests in web container
+      # Run unit tests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
         run: |
-          docker compose run --rm web sh -lc '
-            python -m pip install --upgrade pip &&
-            pip install -r requirements.txt &&
-            pytest -q
-          '
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest==8.3.3
+
+      - name: Run pytest (use your tests folder)
+        run: pytest -q tests
 
       # Always show logs created during the test run
       - name: Show application logs
